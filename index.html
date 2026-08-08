@@ -3,363 +3,380 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Human Pose Detector</title>
 
-<title>Detector de Pessoa</title>
+<!-- Fonte Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
+:root {
+  --bg-color: #050b10;
+  --card-bg: rgba(13, 27, 38, 0.65);
+  --accent-cyan: #00f2fe;
+  --accent-green: #00ff88;
+  --accent-red: #ff3366;
+  --text-main: #e2f1f8;
+  --text-dim: #7a92a5;
+  --border-glow: rgba(0, 242, 254, 0.25);
+}
+
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  background: #071b19;
-  color: white;
-  font-family: Arial, sans-serif;
+  background: var(--bg-color);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 100%, rgba(0, 255, 136, 0.05) 0%, transparent 50%);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+header {
+  margin-bottom: 20px;
   text-align: center;
 }
 
 h1 {
-  margin: 20px 10px 5px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #ffffff 0%, var(--accent-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  text-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
 }
 
-#status {
-  margin: 10px;
-  color: #71f0c5;
-  font-weight: bold;
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text-dim);
 }
 
+/* Dashboard de Status */
+.dashboard-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+
+.status-badge {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glow);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  box-shadow: 0 0 10px var(--accent-red);
+  transition: all 0.3s ease;
+}
+
+.status-badge.active .status-indicator {
+  background: var(--accent-green);
+  box-shadow: 0 0 12px var(--accent-green);
+}
+
+/* Container do Vídeo e Canvas */
 #cameraBox {
   position: relative;
   width: 100%;
   max-width: 900px;
-  margin: 20px auto;
-  background: black;
+  aspect-ratio: 16 / 9;
+  background: #020608;
+  border-radius: 20px;
   overflow: hidden;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 242, 254, 0.1);
 }
 
-video {
-  width: 100%;
-  display: block;
-}
-
-canvas {
+/* Mira de Canto (Cyberpunk HUD overlay) */
+#cameraBox::before, #cameraBox::after {
+  content: '';
   position: absolute;
-  left: 0;
-  top: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--accent-cyan);
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.5;
+}
+#cameraBox::before { top: 15px; left: 15px; border-right: 0; border-bottom: 0; }
+#cameraBox::after { bottom: 15px; right: 15px; border-left: 0; border-top: 0; }
+
+video, canvas {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scaleX(-1); /* Efeito espelho */
+}
+
+/* Botões Estilizados */
+.controls {
+  margin-top: 24px;
 }
 
 button {
-  padding: 16px 25px;
+  font-family: 'Orbitron', sans-serif;
+  padding: 16px 36px;
   border: none;
-  border-radius: 12px;
-  background: #71f0c5;
-  color: #06201c;
-  font-size: 18px;
-  font-weight: bold;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  color: #030f17;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 35px rgba(0, 242, 254, 0.7);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.stop {
+  background: linear-gradient(135deg, #ff3366 0%, #ff6b81 100%);
+  color: #ffffff;
+  box-shadow: 0 0 25px rgba(255, 51, 102, 0.4);
+}
+
+button.stop:hover {
+  box-shadow: 0 0 35px rgba(255, 51, 102, 0.7);
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  h1 { font-size: 1.4rem; }
+  button { width: 100%; padding: 14px 20px; }
+  #cameraBox { aspect-ratio: 4 / 3; }
 }
 </style>
 </head>
 
 <body>
 
-<h1>🦴 Detector de Pessoa</h1>
+<header>
+  <h1>Detector de Postura IA</h1>
+  <p class="subtitle">Mapeamento biomecânico em tempo real</p>
+</header>
 
-<div id="status">
-Câmera desligada
+<div class="dashboard-bar">
+  <div class="status-badge" id="statusBadge">
+    <span class="status-indicator" id="statusIndicator"></span>
+    <span id="statusText">Sistema em Espera</span>
+  </div>
 </div>
-
-<button id="start">
-📷 Abrir câmera
-</button>
 
 <div id="cameraBox">
-
-<video id="video" autoplay playsinline></video>
-
-<canvas id="canvas"></canvas>
-
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
 </div>
 
+<div class="controls">
+  <button id="toggleBtn">INICIAR CÂMERA</button>
+</div>
 
 <!-- BIBLIOTECAS DO MEDIAPIPE -->
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 
 <script>
-
 const video = document.getElementById("video");
-
 const canvas = document.getElementById("canvas");
-
 const ctx = canvas.getContext("2d");
-
-const button = document.getElementById("start");
-
-const status = document.getElementById("status");
-
+const toggleBtn = document.getElementById("toggleBtn");
+const statusBadge = document.getElementById("statusBadge");
+const statusText = document.getElementById("statusText");
 
 let detector = null;
+let stream = null;
+let isRunning = false;
+let animationFrameId = null;
 
-let camera = null;
-
-
-// ==============================
-// CRIA O DETECTOR
-// ==============================
-
+// Inicializa o modelo
 function criarDetector() {
+  if (detector) return detector;
 
   detector = new Pose({
-
-    locateFile: function(file) {
-
-      return "https://cdn.jsdelivr.net/npm/@mediapipe/pose/" + file;
-
-    }
-
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
   });
-
 
   detector.setOptions({
-
     modelComplexity: 1,
-
     smoothLandmarks: true,
-
     enableSegmentation: false,
-
     smoothSegmentation: false,
-
-    minDetectionConfidence: 0.4,
-
-    minTrackingConfidence: 0.4
-
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
   });
 
-
-  detector.onResults(resultado);
-
+  detector.onResults(desenharResultados);
+  return detector;
 }
 
+// Desenhar Elementos na Tela
+function desenharResultados(results) {
+  if (!isRunning || !video.videoWidth) return;
 
-// ==============================
-// RESULTADO
-// ==============================
-
-function resultado(results) {
-
-  if (!video.videoWidth) {
-    return;
+  // Ajusta proporção sem distorção
+  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
   }
 
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  canvas.width = video.videoWidth;
-
-  canvas.height = video.videoHeight;
-
-
-  ctx.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-
-  // NÃO ENCONTROU PESSOA
-
+  // Sem Detecção
   if (!results.poseLandmarks) {
-
-    status.innerText =
-      "🔎 Procurando pessoa...";
-
+    statusBadge.classList.remove("active");
+    statusText.innerText = "Procurando pessoa...";
     return;
-
   }
 
+  // Pessoa Detectada
+  statusBadge.classList.add("active");
+  statusText.innerText = "PESSOA DETECTADA";
 
-  // ENCONTROU PESSOA
+  // Desenhando Esqueleto Neon
+  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
+    color: "#00f2fe",
+    lineWidth: 4
+  });
 
-  status.innerText =
-    "✅ PESSOA DETECTADA!";
-
-
-  // ==============================
-  // LINHAS DO BONECO
-  // ==============================
-
-  drawConnectors(
-
-    ctx,
-
-    results.poseLandmarks,
-
-    POSE_CONNECTIONS,
-
-    {
-      color: "#71f0c5",
-      lineWidth: 7
-    }
-
-  );
-
-
-  // ==============================
-  // PONTOS DO CORPO
-  // ==============================
-
-  drawLandmarks(
-
-    ctx,
-
-    results.poseLandmarks,
-
-    {
-
-      color: "#ffffff",
-
-      fillColor: "#ff3030",
-
-      lineWidth: 2,
-
-      radius: 6
-
-    }
-
-  );
-
+  // Desenhando Articulações
+  drawLandmarks(ctx, results.poseLandmarks, {
+    color: "#ffffff",
+    fillColor: "#00ff88",
+    lineWidth: 2,
+    radius: 6
+  });
 }
 
-
-// ==============================
-// ABRIR CÂMERA
-// ==============================
-
-async function iniciar() {
+// Loop contínuo de processamento
+async function processar() {
+  if (!isRunning) return;
 
   try {
+    if (video.readyState >= 2 && video.videoWidth > 0) {
+      await detector.send({ image: video });
+    }
+  } catch (erro) {
+    console.error("Erro no frame:", erro);
+  }
 
-    status.innerText =
-      "⏳ Carregando detector...";
+  if (isRunning) {
+    animationFrameId = requestAnimationFrame(processar);
+  }
+}
 
-
-    // Verifica se a biblioteca carregou
+// Ligar Câmera
+async function iniciar() {
+  try {
+    statusText.innerText = "Carregando modelo...";
 
     if (typeof Pose === "undefined") {
-
-      throw new Error(
-        "Detector não carregou"
-      );
-
+      throw new Error("Bibliotecas não carregadas.");
     }
-
 
     criarDetector();
 
+    statusText.innerText = "Iniciando câmera...";
 
-    status.innerText =
-      "📷 Abrindo câmera...";
-
-
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: {
-
-          facingMode: "user",
-
-          width: {
-            ideal: 1280
-          },
-
-          height: {
-            ideal: 720
-          }
-
-        },
-
-        audio: false
-
-      });
-
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user",
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
 
     video.srcObject = stream;
-
-
     await video.play();
 
-
-    button.style.display = "none";
-
-
-    status.innerText =
-      "🔎 Procurando pessoa...";
-
-
-    // ==============================
-    // PROCESSAMENTO
-    // ==============================
-
-    async function processar() {
-
-      try {
-
-        if (
-          video.readyState >= 2 &&
-          video.videoWidth > 0
-        ) {
-
-          await detector.send({
-            image: video
-          });
-
-        }
-
-      } catch (erro) {
-
-        console.error(erro);
-
-        status.innerText =
-          "❌ Erro no detector";
-
-      }
-
-
-      requestAnimationFrame(processar);
-
-    }
-
+    isRunning = true;
+    toggleBtn.innerText = "PARAR CÂMERA";
+    toggleBtn.classList.add("stop");
+    statusText.innerText = "Procurando pessoa...";
 
     processar();
 
-
   } catch (erro) {
-
     console.error(erro);
-
-    status.innerText =
-      "❌ Erro: " + erro.message;
-
+    statusText.innerText = "Erro: " + erro.message;
+    parar();
   }
-
 }
 
+// Desligar Câmera
+function parar() {
+  isRunning = false;
 
-button.addEventListener(
-  "click",
-  iniciar
-);
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
 
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+
+  video.srcObject = null;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  toggleBtn.innerText = "INICIAR CÂMERA";
+  toggleBtn.classList.remove("stop");
+  statusBadge.classList.remove("active");
+  statusText.innerText = "Sistema em Espera";
+}
+
+toggleBtn.addEventListener("click", () => {
+  if (isRunning) {
+    parar();
+  } else {
+    iniciar();
+  }
+});
 </script>
 
 </body>
