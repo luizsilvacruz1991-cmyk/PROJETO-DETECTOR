@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Human Pose Detector</title>
+<title>AI Human Pose & Age Detector</title>
 
-<!-- Fonte Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -39,55 +38,51 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 16px;
+  padding: 12px;
 }
 
 header {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   text-align: center;
 }
 
 h1 {
   font-family: 'Orbitron', sans-serif;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: 2px;
   background: linear-gradient(135deg, #ffffff 0%, var(--accent-cyan) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: uppercase;
-  margin-bottom: 6px;
-  text-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
+  margin-bottom: 4px;
 }
 
 .subtitle {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-dim);
 }
 
-/* Dashboard de Status */
 .dashboard-bar {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   width: 100%;
-  max-width: 900px;
 }
 
 .status-badge {
   background: var(--card-bg);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-glow);
-  padding: 10px 20px;
+  padding: 8px 18px;
   border-radius: 50px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -105,29 +100,28 @@ h1 {
   box-shadow: 0 0 12px var(--accent-green);
 }
 
-/* Container do Vídeo e Canvas */
 #cameraBox {
   position: relative;
   width: 100%;
-  max-width: 900px;
-  aspect-ratio: 16 / 9;
+  max-width: 1200px;
+  height: 72vh;
+  max-height: 800px;
   background: #020608;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid var(--border-glow);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 242, 254, 0.1);
+  border: 2px solid var(--border-glow);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 242, 254, 0.15);
 }
 
-/* Mira de Canto (Cyberpunk HUD overlay) */
 #cameraBox::before, #cameraBox::after {
   content: '';
   position: absolute;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--accent-cyan);
+  width: 25px;
+  height: 25px;
+  border: 3px solid var(--accent-cyan);
   z-index: 10;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.7;
 }
 #cameraBox::before { top: 15px; left: 15px; border-right: 0; border-bottom: 0; }
 #cameraBox::after { bottom: 15px; right: 15px; border-left: 0; border-top: 0; }
@@ -135,21 +129,20 @@ h1 {
 video, canvas {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   position: absolute;
   top: 0;
   left: 0;
-  transform: scaleX(-1); /* Efeito espelho */
+  transform: scaleX(-1);
 }
 
-/* Botões Estilizados */
 .controls {
-  margin-top: 24px;
+  margin-top: 14px;
 }
 
 button {
   font-family: 'Orbitron', sans-serif;
-  padding: 16px 36px;
+  padding: 14px 32px;
   border: none;
   border-radius: 50px;
   background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
@@ -158,7 +151,7 @@ button {
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
 }
 
@@ -167,25 +160,14 @@ button:hover {
   box-shadow: 0 0 35px rgba(0, 242, 254, 0.7);
 }
 
-button:active {
-  transform: translateY(1px);
-}
-
 button.stop {
   background: linear-gradient(135deg, #ff3366 0%, #ff6b81 100%);
   color: #ffffff;
   box-shadow: 0 0 25px rgba(255, 51, 102, 0.4);
 }
 
-button.stop:hover {
-  box-shadow: 0 0 35px rgba(255, 51, 102, 0.7);
-}
-
-/* Responsividade */
 @media (max-width: 600px) {
-  h1 { font-size: 1.4rem; }
-  button { width: 100%; padding: 14px 20px; }
-  #cameraBox { aspect-ratio: 4 / 3; }
+  #cameraBox { height: 60vh; }
 }
 </style>
 </head>
@@ -193,8 +175,8 @@ button.stop:hover {
 <body>
 
 <header>
-  <h1>Detector de Postura IA</h1>
-  <p class="subtitle">Mapeamento biomecânico em tempo real</p>
+  <h1>Detector Corporal & Idade IA</h1>
+  <p class="subtitle">Análise biomecânica e estimativa biométrica em tempo real</p>
 </header>
 
 <div class="dashboard-bar">
@@ -213,7 +195,7 @@ button.stop:hover {
   <button id="toggleBtn">INICIAR CÂMERA</button>
 </div>
 
-<!-- BIBLIOTECAS DO MEDIAPIPE -->
+<!-- BIBLIOTECAS MEDIAPIPE -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -232,7 +214,10 @@ let stream = null;
 let isRunning = false;
 let animationFrameId = null;
 
-// Inicializa o modelo
+// Cache da estimativa de idade para evitar oscilações na tela
+let idadeEstimadaCache = null;
+let contagemFrames = 0;
+
 function criarDetector() {
   if (detector) return detector;
 
@@ -253,11 +238,45 @@ function criarDetector() {
   return detector;
 }
 
-// Desenhar Elementos na Tela
+// Algoritmo Biométrico de Estimativa de Idade
+function estimarIdade(landmarks) {
+  // Landmarks faciais do MediaPipe Pose
+  const nariz = landmarks[0];
+  const olhoEsq = landmarks[2];
+  const olhoDir = landmarks[5];
+  const orelhaEsq = landmarks[7];
+  const orelhaDir = landmarks[8];
+  const ombroEsq = landmarks[11];
+  const ombroDir = landmarks[12];
+
+  // Cálculo da distância interocular
+  const distOlhos = Math.hypot(olhoDir.x - olhoEsq.x, olhoDir.y - olhoEsq.y);
+  // Largura dos ombros
+  const larguraOmbros = Math.hypot(ombroDir.x - ombroEsq.x, ombroDir.y - ombroEsq.y);
+
+  // Proporção Cabeça / Ombro (Crianças têm cabeça proporcionalmente maior em relação aos ombros)
+  const proporcaoCabecaOmbro = distOlhos / (larguraOmbros || 0.3);
+
+  // Variação de amostragem biométrica
+  contagemFrames++;
+  if (!idadeEstimadaCache || contagemFrames % 30 === 0) {
+    if (proporcaoCabecaOmbro > 0.38) {
+      idadeEstimadaCache = "8 - 14 anos";
+    } else if (proporcaoCabecaOmbro > 0.28) {
+      idadeEstimadaCache = "18 - 28 anos";
+    } else if (proporcaoCabecaOmbro > 0.22) {
+      idadeEstimadaCache = "29 - 42 anos";
+    } else {
+      idadeEstimadaCache = "45+ anos";
+    }
+  }
+
+  return idadeEstimadaCache;
+}
+
 function desenharResultados(results) {
   if (!isRunning || !video.videoWidth) return;
 
-  // Ajusta proporção sem distorção
   if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -265,33 +284,74 @@ function desenharResultados(results) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Sem Detecção
   if (!results.poseLandmarks) {
     statusBadge.classList.remove("active");
     statusText.innerText = "Procurando pessoa...";
     return;
   }
 
-  // Pessoa Detectada
   statusBadge.classList.add("active");
   statusText.innerText = "PESSOA DETECTADA";
 
-  // Desenhando Esqueleto Neon
-  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
+  const landmarks = results.poseLandmarks;
+
+  // 1. Desenhar conexões da estrutura óssea
+  drawConnectors(ctx, landmarks, POSE_CONNECTIONS, {
     color: "#00f2fe",
     lineWidth: 4
   });
 
-  // Desenhando Articulações
-  drawLandmarks(ctx, results.poseLandmarks, {
+  // 2. Desenhar pontos anatômicos
+  drawLandmarks(ctx, landmarks, {
     color: "#ffffff",
     fillColor: "#00ff88",
     lineWidth: 2,
-    radius: 6
+    radius: 5
   });
+
+  // 3. Projetar a caixa/HUD com a estimativa de idade acima do nariz/cabeça
+  const nariz = landmarks[0];
+  if (nariz && nariz.visibility > 0.5) {
+    const ageText = estimarIdade(landmarks);
+
+    const x = nariz.x * canvas.width;
+    const y = (nariz.y * canvas.height) - 70; // Posição flutuante acima do rosto
+
+    ctx.save();
+    
+    // Desenho do Card Holográfico (HUD)
+    ctx.fillStyle = "rgba(5, 18, 28, 0.85)";
+    ctx.strokeStyle = "#00f2fe";
+    ctx.lineWidth = 2;
+    
+    const cardWidth = 160;
+    const cardHeight = 45;
+    const cardX = x - (cardWidth / 2);
+    const cardY = y;
+
+    // Retângulo do Badge
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 10);
+    ctx.fill();
+    ctx.stroke();
+
+    // Inverter texto para legibilidade (devido ao scaleX(-1) do CSS)
+    ctx.translate(x, cardY + 22);
+    ctx.scale(-1, 1);
+
+    ctx.fillStyle = "#7a92a5";
+    ctx.font = "10px Orbitron";
+    ctx.textAlign = "center";
+    ctx.fillText("ESTIMATIVA DE IDADE", 0, -6);
+
+    ctx.fillStyle = "#00ff88";
+    ctx.font = "bold 13px Orbitron";
+    ctx.fillText(ageText, 0, 10);
+
+    ctx.restore();
+  }
 }
 
-// Loop contínuo de processamento
 async function processar() {
   if (!isRunning) return;
 
@@ -308,7 +368,6 @@ async function processar() {
   }
 }
 
-// Ligar Câmera
 async function iniciar() {
   try {
     statusText.innerText = "Carregando modelo...";
@@ -347,7 +406,6 @@ async function iniciar() {
   }
 }
 
-// Desligar Câmera
 function parar() {
   isRunning = false;
 
