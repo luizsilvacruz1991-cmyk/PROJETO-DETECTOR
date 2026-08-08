@@ -1,285 +1,366 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Detector de Pessoas</title>
+<title>Detector de Pessoa</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* {
+  box-sizing: border-box;
+}
 
-    body {
-      margin: 0;
-      background: #071b19;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
+body {
+  margin: 0;
+  background: #071b19;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-    h1 {
-      margin: 20px 10px 10px;
-    }
+h1 {
+  margin: 20px 10px 5px;
+}
 
-    #status {
-      margin: 10px;
-      color: #71f0c5;
-      min-height: 24px;
-    }
+#status {
+  margin: 10px;
+  color: #71f0c5;
+  font-weight: bold;
+}
 
-    .camera-container {
-      position: relative;
-      width: 100%;
-      max-width: 900px;
-      margin: 20px auto;
-      background: black;
-      overflow: hidden;
-    }
+#cameraBox {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 20px auto;
+  background: black;
+  overflow: hidden;
+}
 
-    video {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
+video {
+  width: 100%;
+  display: block;
+}
 
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
 
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 16px 25px;
-      background: #71f0c5;
-      color: #06201c;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-  </style>
+button {
+  padding: 16px 25px;
+  border: none;
+  border-radius: 12px;
+  background: #71f0c5;
+  color: #06201c;
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>🦴 Detector de Pessoas</h1>
+<h1>🦴 Detector de Pessoa</h1>
 
-  <div id="status">
-    Câmera desligada
-  </div>
+<div id="status">
+Câmera desligada
+</div>
 
-  <button id="startButton">
-    📷 Abrir câmera
-  </button>
+<button id="start">
+📷 Abrir câmera
+</button>
 
-  <div class="camera-container">
+<div id="cameraBox">
 
-    <video id="camera" autoplay playsinline></video>
+<video id="video" autoplay playsinline></video>
 
-    <canvas id="canvas"></canvas>
+<canvas id="canvas"></canvas>
 
-  </div>
+</div>
 
-  <!-- MediaPipe Pose -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 
-  <!-- Desenho do esqueleto -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<!-- BIBLIOTECAS DO MEDIAPIPE -->
 
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
-    const video = document.getElementById("camera");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
 
-    const button = document.getElementById("startButton");
-    const status = document.getElementById("status");
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
-    let cameraStream = null;
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 
-    // ==========================================
-    // CONFIGURAÇÃO DO DETECTOR
-    // ==========================================
 
-    const pose = new Pose({
-      locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-      }
-    });
+<script>
 
-    pose.setOptions({
+const video = document.getElementById("video");
 
-      modelComplexity: 1,
+const canvas = document.getElementById("canvas");
 
-      smoothLandmarks: true,
+const ctx = canvas.getContext("2d");
 
-      enableSegmentation: false,
+const button = document.getElementById("start");
 
-      smoothSegmentation: true,
+const status = document.getElementById("status");
 
-      minDetectionConfidence: 0.5,
 
-      minTrackingConfidence: 0.5
+let detector = null;
 
-    });
+let camera = null;
 
-    // ==========================================
-    // RESULTADO DA DETECÇÃO
-    // ==========================================
 
-    pose.onResults((results) => {
+// ==============================
+// CRIA O DETECTOR
+// ==============================
 
-      if (!video.videoWidth || !video.videoHeight) {
-        return;
-      }
+function criarDetector() {
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+  detector = new Pose({
 
-      ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
+    locateFile: function(file) {
+
+      return "https://cdn.jsdelivr.net/npm/@mediapipe/pose/" + file;
+
+    }
+
+  });
+
+
+  detector.setOptions({
+
+    modelComplexity: 1,
+
+    smoothLandmarks: true,
+
+    enableSegmentation: false,
+
+    smoothSegmentation: false,
+
+    minDetectionConfidence: 0.4,
+
+    minTrackingConfidence: 0.4
+
+  });
+
+
+  detector.onResults(resultado);
+
+}
+
+
+// ==============================
+// RESULTADO
+// ==============================
+
+function resultado(results) {
+
+  if (!video.videoWidth) {
+    return;
+  }
+
+
+  canvas.width = video.videoWidth;
+
+  canvas.height = video.videoHeight;
+
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  // NÃO ENCONTROU PESSOA
+
+  if (!results.poseLandmarks) {
+
+    status.innerText =
+      "🔎 Procurando pessoa...";
+
+    return;
+
+  }
+
+
+  // ENCONTROU PESSOA
+
+  status.innerText =
+    "✅ PESSOA DETECTADA!";
+
+
+  // ==============================
+  // LINHAS DO BONECO
+  // ==============================
+
+  drawConnectors(
+
+    ctx,
+
+    results.poseLandmarks,
+
+    POSE_CONNECTIONS,
+
+    {
+      color: "#71f0c5",
+      lineWidth: 7
+    }
+
+  );
+
+
+  // ==============================
+  // PONTOS DO CORPO
+  // ==============================
+
+  drawLandmarks(
+
+    ctx,
+
+    results.poseLandmarks,
+
+    {
+
+      color: "#ffffff",
+
+      fillColor: "#ff3030",
+
+      lineWidth: 2,
+
+      radius: 6
+
+    }
+
+  );
+
+}
+
+
+// ==============================
+// ABRIR CÂMERA
+// ==============================
+
+async function iniciar() {
+
+  try {
+
+    status.innerText =
+      "⏳ Carregando detector...";
+
+
+    // Verifica se a biblioteca carregou
+
+    if (typeof Pose === "undefined") {
+
+      throw new Error(
+        "Detector não carregou"
       );
 
-      // Verifica se encontrou uma pessoa
-      if (!results.poseLandmarks) {
+    }
 
-        status.textContent =
-          "🔍 Procurando uma pessoa...";
 
-        return;
-      }
+    criarDetector();
 
-      status.textContent =
-        "✅ Pessoa detectada!";
 
-      // ==========================================
-      // DESENHA O BONECO DE PALITO
-      // ==========================================
+    status.innerText =
+      "📷 Abrindo câmera...";
 
-      drawConnectors(
-        ctx,
-        results.poseLandmarks,
-        POSE_CONNECTIONS,
-        {
-          color: "#71f0c5",
-          lineWidth: 6
-        }
-      );
 
-      // ==========================================
-      // DESENHA OS PONTOS DO CORPO
-      // ==========================================
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
 
-      drawLandmarks(
-        ctx,
-        results.poseLandmarks,
-        {
-          color: "#ffffff",
-          fillColor: "#71f0c5",
-          lineWidth: 2,
-          radius: 5
-        }
-      );
+        video: {
 
-    });
+          facingMode: "user",
 
-    // ==========================================
-    // ABRIR CÂMERA
-    // ==========================================
+          width: {
+            ideal: 1280
+          },
 
-    async function abrirCamera() {
+          height: {
+            ideal: 720
+          }
+
+        },
+
+        audio: false
+
+      });
+
+
+    video.srcObject = stream;
+
+
+    await video.play();
+
+
+    button.style.display = "none";
+
+
+    status.innerText =
+      "🔎 Procurando pessoa...";
+
+
+    // ==============================
+    // PROCESSAMENTO
+    // ==============================
+
+    async function processar() {
 
       try {
 
-        status.textContent =
-          "📷 Solicitando acesso à câmera...";
+        if (
+          video.readyState >= 2 &&
+          video.videoWidth > 0
+        ) {
 
-        cameraStream =
-          await navigator.mediaDevices.getUserMedia({
-
-            video: {
-              facingMode: "environment",
-
-              width: {
-                ideal: 1280
-              },
-
-              height: {
-                ideal: 720
-              }
-            },
-
-            audio: false
-
+          await detector.send({
+            image: video
           });
 
-        video.srcObject = cameraStream;
-
-        await video.play();
-
-        status.textContent =
-          "🔍 Iniciando detector...";
-
-        button.style.display = "none";
-
-        detectar();
+        }
 
       } catch (erro) {
 
         console.error(erro);
 
-        status.textContent =
-          "❌ Não foi possível acessar a câmera.";
-
-        alert(
-          "Não consegui acessar a câmera. " +
-          "Verifique se você permitiu o acesso à câmera."
-        );
+        status.innerText =
+          "❌ Erro no detector";
 
       }
 
-    }
 
-    // ==========================================
-    // PROCESSA A CÂMERA
-    // ==========================================
-
-    async function detectar() {
-
-      if (
-        video.readyState >= 2 &&
-        video.videoWidth > 0
-      ) {
-
-        await pose.send({
-          image: video
-        });
-
-      }
-
-      requestAnimationFrame(detectar);
+      requestAnimationFrame(processar);
 
     }
 
-    button.addEventListener(
-      "click",
-      abrirCamera
-    );
 
-  </script>
+    processar();
+
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    status.innerText =
+      "❌ Erro: " + erro.message;
+
+  }
+
+}
+
+
+button.addEventListener(
+  "click",
+  iniciar
+);
+
+</script>
 
 </body>
 </html>
