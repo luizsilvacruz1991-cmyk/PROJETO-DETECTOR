@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Detector de Pessoa</title>
+<title>Detector de Pessoas</title>
 
 <style>
 * {
@@ -20,20 +20,21 @@ body {
 }
 
 h1 {
-  margin: 20px 10px 5px;
+  margin: 18px 10px 5px;
 }
 
 #status {
   margin: 10px;
   color: #71f0c5;
   font-weight: bold;
+  min-height: 25px;
 }
 
 #cameraBox {
   position: relative;
   width: 100%;
   max-width: 900px;
-  margin: 20px auto;
+  margin: 15px auto;
   background: black;
   overflow: hidden;
 }
@@ -49,23 +50,46 @@ canvas {
   top: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+}
+
+#ageBox {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  padding: 10px 15px;
+  background: rgba(0,0,0,.75);
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #71f0c5;
+  display: none;
 }
 
 button {
-  padding: 16px 25px;
+  padding: 14px 20px;
+  margin: 5px;
   border: none;
   border-radius: 12px;
   background: #71f0c5;
   color: #06201c;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
+}
+
+button:active {
+  transform: scale(.97);
+}
+
+#switchButton {
+  display: none;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🦴 Detector de Pessoa</h1>
+<h1>🦴 Detector de Pessoas</h1>
 
 <div id="status">
 Câmera desligada
@@ -75,20 +99,26 @@ Câmera desligada
 📷 Abrir câmera
 </button>
 
+<button id="switchButton">
+🔄 Trocar câmera
+</button>
+
 <div id="cameraBox">
 
 <video id="video" autoplay playsinline></video>
 
 <canvas id="canvas"></canvas>
 
+<div id="ageBox">
+🎂 Idade estimada: --
+</div>
+
 </div>
 
 
-<!-- BIBLIOTECAS DO MEDIAPIPE -->
+<!-- MEDIAPIPE POSE -->
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
@@ -97,25 +127,40 @@ Câmera desligada
 
 <script>
 
-const video = document.getElementById("video");
+const video =
+document.getElementById("video");
 
-const canvas = document.getElementById("canvas");
+const canvas =
+document.getElementById("canvas");
 
-const ctx = canvas.getContext("2d");
+const ctx =
+canvas.getContext("2d");
 
-const button = document.getElementById("start");
+const startButton =
+document.getElementById("start");
 
-const status = document.getElementById("status");
+const switchButton =
+document.getElementById("switchButton");
 
+const status =
+document.getElementById("status");
+
+const ageBox =
+document.getElementById("ageBox");
+
+
+let stream = null;
 
 let detector = null;
 
-let camera = null;
+let cameraAtual = "user";
+
+let pessoaDetectada = false;
 
 
-// ==============================
-// CRIA O DETECTOR
-// ==============================
+// ======================================
+// CRIA DETECTOR DE CORPO
+// ======================================
 
 function criarDetector() {
 
@@ -123,7 +168,9 @@ function criarDetector() {
 
     locateFile: function(file) {
 
-      return "https://cdn.jsdelivr.net/npm/@mediapipe/pose/" + file;
+      return
+      "https://cdn.jsdelivr.net/npm/@mediapipe/pose/"
+      + file;
 
     }
 
@@ -138,34 +185,34 @@ function criarDetector() {
 
     enableSegmentation: false,
 
-    smoothSegmentation: false,
+    minDetectionConfidence: 0.5,
 
-    minDetectionConfidence: 0.4,
-
-    minTrackingConfidence: 0.4
+    minTrackingConfidence: 0.5
 
   });
 
 
-  detector.onResults(resultado);
+  detector.onResults(resultados);
 
 }
 
 
-// ==============================
-// RESULTADO
-// ==============================
+// ======================================
+// RESULTADO DO CORPO
+// ======================================
 
-function resultado(results) {
+function resultados(results) {
 
   if (!video.videoWidth) {
     return;
   }
 
 
-  canvas.width = video.videoWidth;
+  canvas.width =
+  video.videoWidth;
 
-  canvas.height = video.videoHeight;
+  canvas.height =
+  video.videoHeight;
 
 
   ctx.clearRect(
@@ -176,27 +223,28 @@ function resultado(results) {
   );
 
 
-  // NÃO ENCONTROU PESSOA
-
   if (!results.poseLandmarks) {
 
+    pessoaDetectada = false;
+
     status.innerText =
-      "🔎 Procurando pessoa...";
+    "🔎 Procurando pessoa...";
+
+    ageBox.style.display =
+    "none";
 
     return;
-
   }
 
 
-  // ENCONTROU PESSOA
+  pessoaDetectada = true;
+
 
   status.innerText =
-    "✅ PESSOA DETECTADA!";
+  "✅ Pessoa detectada!";
 
 
-  // ==============================
   // LINHAS DO BONECO
-  // ==============================
 
   drawConnectors(
 
@@ -214,9 +262,7 @@ function resultado(results) {
   );
 
 
-  // ==============================
-  // PONTOS DO CORPO
-  // ==============================
+  // PONTOS
 
   drawLandmarks(
 
@@ -238,24 +284,74 @@ function resultado(results) {
 
   );
 
+
+  // MOSTRA ESTIMATIVA
+
+  mostrarIdadeEstimada();
+
 }
 
 
-// ==============================
-// ABRIR CÂMERA
-// ==============================
+// ======================================
+// ESTIMATIVA DE IDADE
+// ======================================
 
-async function iniciar() {
+function mostrarIdadeEstimada() {
+
+  /*
+    IMPORTANTE:
+
+    Esta função NÃO identifica a idade real.
+    Ela apenas mostra uma faixa estimada
+    para demonstração.
+
+    Para uma estimativa real seria necessário
+    adicionar um modelo específico de idade.
+  */
+
+
+  if (!pessoaDetectada) {
+    return;
+  }
+
+
+  ageBox.style.display =
+  "block";
+
+
+  ageBox.innerText =
+  "🎂 Idade estimada: analisando...";
+
+
+  setTimeout(() => {
+
+    if (pessoaDetectada) {
+
+      ageBox.innerText =
+      "🎂 Idade estimada: consulte o modelo facial";
+
+    }
+
+  }, 1000);
+
+}
+
+
+// ======================================
+// ABRIR CÂMERA
+// ======================================
+
+async function iniciarCamera() {
 
   try {
 
     status.innerText =
-      "⏳ Carregando detector...";
+    "⏳ Carregando detector...";
 
 
-    // Verifica se a biblioteca carregou
-
-    if (typeof Pose === "undefined") {
+    if (
+      typeof Pose === "undefined"
+    ) {
 
       throw new Error(
         "Detector não carregou"
@@ -267,77 +363,86 @@ async function iniciar() {
     criarDetector();
 
 
+    await trocarCamera();
+
+
+    startButton.style.display =
+    "none";
+
+    switchButton.style.display =
+    "inline-block";
+
+
+  } catch (erro) {
+
+    console.error(erro);
+
     status.innerText =
-      "📷 Abrindo câmera...";
+    "❌ " + erro.message;
+
+  }
+
+}
 
 
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
+// ======================================
+// TROCAR CÂMERA
+// ======================================
 
-        video: {
+async function trocarCamera() {
 
-          facingMode: "user",
+  try {
 
-          width: {
-            ideal: 1280
-          },
+    status.innerText =
+    "📷 Trocando câmera...";
 
-          height: {
-            ideal: 720
-          }
 
-        },
+    // Para câmera antiga
 
-        audio: false
+    if (stream) {
 
+      stream
+      .getTracks()
+      .forEach(track => {
+        track.stop();
       });
 
+    }
 
-    video.srcObject = stream;
+
+    stream =
+    await navigator.mediaDevices.getUserMedia({
+
+      video: {
+
+        facingMode: {
+          ideal: cameraAtual
+        },
+
+        width: {
+          ideal: 1280
+        },
+
+        height: {
+          ideal: 720
+        }
+
+      },
+
+      audio: false
+
+    });
+
+
+    video.srcObject =
+    stream;
 
 
     await video.play();
 
 
-    button.style.display = "none";
-
-
     status.innerText =
-      "🔎 Procurando pessoa...";
-
-
-    // ==============================
-    // PROCESSAMENTO
-    // ==============================
-
-    async function processar() {
-
-      try {
-
-        if (
-          video.readyState >= 2 &&
-          video.videoWidth > 0
-        ) {
-
-          await detector.send({
-            image: video
-          });
-
-        }
-
-      } catch (erro) {
-
-        console.error(erro);
-
-        status.innerText =
-          "❌ Erro no detector";
-
-      }
-
-
-      requestAnimationFrame(processar);
-
-    }
+    "🔎 Procurando pessoa...";
 
 
     processar();
@@ -348,16 +453,75 @@ async function iniciar() {
     console.error(erro);
 
     status.innerText =
-      "❌ Erro: " + erro.message;
+    "❌ Não foi possível trocar a câmera.";
 
   }
 
 }
 
 
-button.addEventListener(
+// ======================================
+// PROCESSAMENTO
+// ======================================
+
+async function processar() {
+
+  if (
+    video.readyState >= 2 &&
+    video.videoWidth > 0 &&
+    detector
+  ) {
+
+    try {
+
+      await detector.send({
+        image: video
+      });
+
+    } catch (erro) {
+
+      console.error(erro);
+
+    }
+
+  }
+
+
+  requestAnimationFrame(processar);
+
+}
+
+
+// ======================================
+// BOTÕES
+// ======================================
+
+startButton.addEventListener(
   "click",
-  iniciar
+  iniciarCamera
+);
+
+
+switchButton.addEventListener(
+  "click",
+  async () => {
+
+    if (cameraAtual === "user") {
+
+      cameraAtual =
+      "environment";
+
+    } else {
+
+      cameraAtual =
+      "user";
+
+    }
+
+
+    await trocarCamera();
+
+  }
 );
 
 </script>
