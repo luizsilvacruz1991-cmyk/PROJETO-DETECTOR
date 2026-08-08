@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detector de Pessoas</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #071b19;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 20px 10px 10px;
+    }
+
+    #status {
+      margin: 10px;
+      color: #71f0c5;
+    }
+
+    .camera-container {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      margin: 20px auto;
+      background: black;
+      overflow: hidden;
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 16px 25px;
+      background: #71f0c5;
+      color: #06201c;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Detector de Pessoas</h1>
+
+  <div id="status">
+    Câmera desligada
+  </div>
+
+  <button id="startButton">
+    📷 Abrir câmera
+  </button>
+
+  <div class="camera-container">
+    <video id="camera" autoplay playsinline></video>
+  </div>
+
+  <script>
+    const video = document.getElementById("camera");
+    const button = document.getElementById("startButton");
+    const status = document.getElementById("status");
+
+    async function abrirCamera() {
+      try {
+        status.textContent = "Solicitando acesso à câmera...";
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+
+        status.textContent = "✅ Câmera funcionando!";
+        button.style.display = "none";
+
+      } catch (erro) {
+        console.error(erro);
+
+        status.textContent =
+          "❌ Não foi possível acessar a câmera.";
+
+        alert(
+          "Não consegui acessar a câmera. " +
+          "Verifique se você permitiu o acesso à câmera."
+        );
+      }
+    }
+
+    button.addEventListener("click", abrirCamera);
+  </script>
+
+</body>
+</html>
